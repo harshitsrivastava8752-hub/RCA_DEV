@@ -6,25 +6,30 @@
     "root_cause": "Unable to determine: the reasoning LLM became unavailable during the investigation.",
     "confidence": "low",
     "evidence": [
-      "[{\"name\": \"checkout-api-6c59f77c45-tr4f7\", \"phase\": \"Running\", \"restart_count\": 0, \"created\": \"2026-09-29T16:22:30Z\", \"containers\": [{\"name\": \"checkout-api\", \"ready\": true, \"restart_count\": 0, \"state\": \"running\"}]}, {\"name\": \"frontend-7f4d76bb4f-bn9xl\", \"phase\": \"Running\", \"restart_count\": 3, \"la...",
-      "[{\"type\": \"Warning\", \"reason\": \"Unhealthy\", \"message\": \"Readiness probe failed: command timed out: \\\"pg_isready -h 127.0.0.1 -U app -d orders\\\" timed out after 1s\", \"involved_object\": \"Pod/postgres-658dfb94c7-w7jp6\", \"count\": 1, \"last_timestamp\": \"2026-09-29T16:27:26Z\"}, {\"type\": \"Normal\", \"reaso...",
-      "{\"series_total\": 2, \"series\": [{\"metric\": {\"service\": \"frontend\"}, \"first\": 1.96153, \"last\": 1.96156, \"min\": 0.754439, \"max\": 1.97208, \"samples\": [[\"2026-09-29T15:58:03Z\", 1.96153], [\"2026-09-29T16:04:03Z\", 1.96506], [\"2026-09-29T16:10:03Z\", 1.43871], [\"2026-09-29T16:16:03Z\", 1.00008], [\"2026-09-..."
+      "[{\"name\": \"checkout-api-5fd864766f-8dn44\", \"phase\": \"Running\", \"restart_count\": 0, \"created\": \"2026-09-30T09:05:36Z\", \"containers\": [{\"name\": \"checkout-api\", \"ready\": true, \"restart_count\": 0, \"state\": \"running\"}]}, {\"name\": \"frontend-7f4d76bb4f-bn9xl\", \"phase\": \"Running\", \"restart_count\": 5, \"la...",
+      "[{\"type\": \"Normal\", \"reason\": \"Killing\", \"message\": \"Stopping container checkout-api\", \"involved_object\": \"Pod/checkout-api-5d7d6cd4dd-vgzq5\", \"count\": 1, \"last_timestamp\": \"2026-09-30T09:05:46Z\"}, {\"type\": \"Normal\", \"reason\": \"SuccessfulDelete\", \"message\": \"Deleted pod: checkout-api-5d7d6cd4dd-v...",
+      "{\"series_total\": 2, \"series\": [{\"metric\": {\"service\": \"checkout-api\"}, \"first\": 0.172935, \"last\": 0.0796743, \"min\": 0.0112756, \"max\": 0.185976, \"samples\": [[\"2026-09-30T08:38:14Z\", 0.172935], [\"2026-09-30T08:42:29Z\", 0.182466], [\"2026-09-30T08:46:59Z\", 0.182466], [\"2026-09-30T08:51:14Z\", 0.178959..."
     ],
     "timeline": [
       {
-        "timestamp": "2026-09-29T16:28:03Z",
-        "description": "k8s_get_pods: [{\"name\": \"checkout-api-6c59f77c45-tr4f7\", \"phase\": \"Running\", \"restart_count\": 0, \"created\": \"2026-09-29T16:22:30Z\", \"containers\": [{\"name\": \"checkout-api\", \"ready\": true, \"restart_count\": 0, \"state\": \"running\"}]}, {\"name\": \"frontend-7f4d76bb4f-bn9xl\", \"phase\": \"Running\", \"restart_count\": 3, \"la..."
+        "timestamp": "2026-09-30T09:08:14Z",
+        "description": "k8s_get_pods: [{\"name\": \"checkout-api-5fd864766f-8dn44\", \"phase\": \"Running\", \"restart_count\": 0, \"created\": \"2026-09-30T09:05:36Z\", \"containers\": [{\"name\": \"checkout-api\", \"ready\": true, \"restart_count\": 0, \"state\": \"running\"}]}, {\"name\": \"frontend-7f4d76bb4f-bn9xl\", \"phase\": \"Running\", \"restart_count\": 5, \"la..."
       },
       {
-        "timestamp": "2026-09-29T16:28:03Z",
-        "description": "k8s_get_events: [{\"type\": \"Warning\", \"reason\": \"Unhealthy\", \"message\": \"Readiness probe failed: command timed out: \\\"pg_isready -h 127.0.0.1 -U app -d orders\\\" timed out after 1s\", \"involved_object\": \"Pod/postgres-658dfb94c7-w7jp6\", \"count\": 1, \"last_timestamp\": \"2026-09-29T16:27:26Z\"}, {\"type\": \"Normal\", \"reaso..."
+        "timestamp": "2026-09-30T09:08:14Z",
+        "description": "k8s_get_events: [{\"type\": \"Normal\", \"reason\": \"Killing\", \"message\": \"Stopping container checkout-api\", \"involved_object\": \"Pod/checkout-api-5d7d6cd4dd-vgzq5\", \"count\": 1, \"last_timestamp\": \"2026-09-30T09:05:46Z\"}, {\"type\": \"Normal\", \"reason\": \"SuccessfulDelete\", \"message\": \"Deleted pod: checkout-api-5d7d6cd4dd-v..."
       },
       {
-        "timestamp": "2026-09-29T16:28:03Z",
-        "description": "prometheus_query: {\"series_total\": 2, \"series\": [{\"metric\": {\"service\": \"frontend\"}, \"first\": 1.96153, \"last\": 1.96156, \"min\": 0.754439, \"max\": 1.97208, \"samples\": [[\"2026-09-29T15:58:03Z\", 1.96153], [\"2026-09-29T16:04:03Z\", 1.96506], [\"2026-09-29T16:10:03Z\", 1.43871], [\"2026-09-29T16:16:03Z\", 1.00008], [\"2026-09-..."
+        "timestamp": "2026-09-30T09:08:14Z",
+        "description": "prometheus_query: {\"series_total\": 2, \"series\": [{\"metric\": {\"service\": \"checkout-api\"}, \"first\": 0.172935, \"last\": 0.0796743, \"min\": 0.0112756, \"max\": 0.185976, \"samples\": [[\"2026-09-30T08:38:14Z\", 0.172935], [\"2026-09-30T08:42:29Z\", 0.182466], [\"2026-09-30T08:46:59Z\", 0.182466], [\"2026-09-30T08:51:14Z\", 0.178959..."
       }
     ],
-    "alternative_explanations": [],
-    "uncertainty": "Investigation halted early because the LLM backend failed (LLM request failed (APITimeoutError); retrying in 3s would exceed the 90s call deadline). The evidence and hypotheses above reflect only what had been gathered before the failure; no hypothesis was confirmed or refuted."
+    "alternative_explanations": [
+      "The checkout-api pod is crashing due to insufficient memory, causing Kubernetes to kill and restart it, leading to 5xx errors.",
+      "A downstream payment service is unavailable or returning errors, causing checkout-api to respond with 5xx errors.",
+      "A recent configuration change (e.g., environment variable or image update) introduced a bug in checkout-api, causing it to mis-handle requests and return 5xx errors.",
+      "Network policy or firewall changes are blocking traffic between checkout-api and its database, causing timeouts and resulting in 5xx errors."
+    ],
+    "uncertainty": "Investigation halted early because the LLM backend failed (LLM request failed (HTTP 429); retrying in 95s would exceed the 90s call deadline). The evidence and hypotheses above reflect only what had been gathered before the failure; no hypothesis was confirmed or refuted."
   }
 }
