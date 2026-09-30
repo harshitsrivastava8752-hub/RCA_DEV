@@ -1,0 +1,11 @@
+# The chart names its single Service after the fullname; SHARED_CONTEXT requires jaeger-query:16686.
+fullnameOverride: jaeger-query
+
+jaeger:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 1Gi

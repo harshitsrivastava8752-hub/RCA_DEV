@@ -1,0 +1,6 @@
+langgraph>=0.2
+openai>=1.30
+kubernetes>=29.0
+requests
+pydantic>=2
+pyyaml

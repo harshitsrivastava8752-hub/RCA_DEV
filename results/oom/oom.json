@@ -1,0 +1,54 @@
+{
+  "scenario": "oom",
+  "incident_prompt": "The checkout service is experiencing a sudden increase in 5xx errors.",
+  "ground_truth": "checkout-api containers were repeatedly OOMKilled: memory grew past the 256Mi limit (leak driven through /debug/leak), the container restarted each time, and requests through frontend failed with 5xx/502 while it was down. Evidence: pod lastState OOMKilled and rising restartCount, checkout-api memory climbing to the limit before each drop, 5xx bursts aligned with the restarts.",
+  "rca": {
+    "root_cause": "Memory pressure caused the checkout-api pods to be OOMKilled, leading to restarts and a spike in 5xx errors.",
+    "confidence": "high",
+    "evidence": [
+      "k8s_get_pods shows restart_count 4 and last_termination_reason OOMKilled for checkout-api-6d6fd68c5d-6bgz7",
+      "prometheus_query for container_memory_working_set_bytes shows peak memory usage of 112,116,000 bytes (~112MB) within 30m",
+      "prometheus_query for 5xx error rate shows a sharp increase from 0.084 to ~1.96 per second during the same period"
+    ],
+    "timeline": [
+      {
+        "timestamp": "2026-09-29T16:40:38Z",
+        "description": "checkout-api pod created"
+      },
+      {
+        "timestamp": "2026-09-30T04:06:43Z",
+        "description": "Container image pulled (Normal event)"
+      },
+      {
+        "timestamp": "2026-09-30T04:07:12Z",
+        "description": "5xx error rate starts at 0.084 per second"
+      },
+      {
+        "timestamp": "2026-09-30T04:10:27Z",
+        "description": "5xx error rate rises to 1.384 per second"
+      },
+      {
+        "timestamp": "2026-09-30T04:13:27Z",
+        "description": "5xx error rate rises to 1.958 per second"
+      },
+      {
+        "timestamp": "2026-09-30T04:16:42Z",
+        "description": "5xx error rate remains high at 1.968 per second"
+      },
+      {
+        "timestamp": "2026-09-30T04:22:57Z",
+        "description": "k8s_get_pods reports restart_count 4 and OOMKilled termination"
+      },
+      {
+        "timestamp": "2026-09-30T04:22:59Z",
+        "description": "Prometheus shows memory usage peaking at 112,116,000 bytes"
+      }
+    ],
+    "alternative_explanations": [
+      "Traffic surge overwhelming the service (no supporting evidence)",
+      "Downstream dependency failure (no supporting evidence)",
+      "Bug in newly deployed image (no supporting evidence)"
+    ],
+    "uncertainty": "None; all evidence consistently points to OOMKilled events as the root cause."
+  }
+}

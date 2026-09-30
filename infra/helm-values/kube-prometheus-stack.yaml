@@ -1,0 +1,44 @@
+alertmanager:
+  enabled: false
+
+# kind binds these to localhost / needs shared mounts; targets would sit permanently down or crashloop
+nodeExporter:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+grafana:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+prometheus:
+  prometheusSpec:
+    replicas: 1
+    retention: 6h
+    # pick up demo-app ServiceMonitors/PodMonitors without a release label
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi

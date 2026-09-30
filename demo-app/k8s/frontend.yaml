@@ -1,0 +1,83 @@
+# build+load: docker build -t rca-demo/frontend:v1 demo-app/frontend && kind load docker-image rca-demo/frontend:v1 --name rca-agent
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: demo-app
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: rca-demo/frontend:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: CHECKOUT_API_URL
+              value: http://checkout-api:8080
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://jaeger-query.observability.svc:4318
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: demo-app
+  labels:
+    app: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: frontend
+  namespace: demo-app
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      # keep the app's own `service` label instead of Prometheus renaming it to exported_service
+      honorLabels: true

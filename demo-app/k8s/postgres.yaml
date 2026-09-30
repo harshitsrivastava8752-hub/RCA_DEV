@@ -1,0 +1,81 @@
+# postgres-init must stay in sync with demo-app/postgres/init.sql
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: demo-app
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      item TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    INSERT INTO orders (item) VALUES ('widget'), ('gadget'), ('gizmo');
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: demo-app
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: orders
+            - name: POSTGRES_USER
+              value: app
+            - name: POSTGRES_PASSWORD
+              value: app_password
+          volumeMounts:
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          readinessProbe:
+            exec:
+              # -h 127.0.0.1 forces TCP; the init-phase temporary server listens on the unix socket only
+              command: ["pg_isready", "-h", "127.0.0.1", "-U", "app", "-d", "orders"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: demo-app
+  labels:
+    app: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

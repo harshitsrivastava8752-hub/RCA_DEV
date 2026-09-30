@@ -1,0 +1,64 @@
+{
+  "scenario": "dependency_failure",
+  "incident_prompt": "Users of the storefront are getting error responses when they try to check out, and the frontend is returning 5xx errors.",
+  "ground_truth": "The postgres Deployment was scaled to 0 replicas, so checkout-api cannot connect to its database: /checkout returns 500 and frontend returns 502, while checkout-api pods remain Ready. Evidence: no postgres pod and a scale-down event in demo-app, checkout-api logs with database connection errors, 5xx counters rising on both frontend and checkout-api.",
+  "rca": {
+    "root_cause": "PostgreSQL deployment was scaled to zero replicas, causing checkout\u2011api to be unable to connect to the database and return 500 errors, which the frontend forwarded as 502 responses.",
+    "confidence": "low",
+    "evidence": [
+      "checkout\u2011api pod logs show \"OperationalError: connection to server at \\\"postgres\\\" failed: Connection refused\"",
+      "postgres deployment has 0 replicas and no running pods",
+      "frontend logs report checkout\u2011api returned status 500 and POST /checkout -> 502",
+      "jaeger traces show frontend POST /checkout returning 502",
+      "prometheus query shows low CPU usage of checkout\u2011api, indicating it was not resource\u2011starved"
+    ],
+    "timeline": [
+      {
+        "timestamp": "2026-09-29T16:08:14Z",
+        "description": "Observed running checkout\u2011api and frontend pods; checkout\u2011api restart_count 0, frontend restart_count 3."
+      },
+      {
+        "timestamp": "2026-09-29T16:08:16Z",
+        "description": "Checked checkout\u2011api deployment config; no CPU limits set."
+      },
+      {
+        "timestamp": "2026-09-29T16:08:54Z",
+        "description": "Confirmed single checkout\u2011api pod running."
+      },
+      {
+        "timestamp": "2026-09-29T16:09:27Z",
+        "description": "Jaeger trace shows frontend POST /checkout returning 502."
+      },
+      {
+        "timestamp": "2026-09-29T16:10:27Z",
+        "description": "Checkout\u2011api pod logs show database connection refused."
+      },
+      {
+        "timestamp": "2026-09-29T16:11:30Z",
+        "description": "No postgres pods found in namespace."
+      },
+      {
+        "timestamp": "2026-09-29T16:13:04Z",
+        "description": "Frontend pod logs report checkout\u2011api returned status 500 and 502."
+      },
+      {
+        "timestamp": "2026-09-29T16:14:13Z",
+        "description": "Postgres deployment retrieved: replicas 0, no ready replicas."
+      },
+      {
+        "timestamp": "2026-09-29T16:16:21Z",
+        "description": "Postgres deployment resource config confirms 0 replicas."
+      },
+      {
+        "timestamp": "2026-09-29T16:17:21Z",
+        "description": "Prometheus query shows low CPU usage of checkout\u2011api pod."
+      }
+    ],
+    "alternative_explanations": [
+      "Resource starvation of checkout\u2011api (refuted by low CPU usage and restart_count 0).",
+      "Frontend pod high restart count causing 5xx (refuted by logs showing checkout\u2011api errors).",
+      "Misconfigured ingress/service routing (refuted by traces showing requests reaching checkout\u2011api)."
+    ],
+    "uncertainty": "None; all evidence consistently points to PostgreSQL unavailability as the root cause."
+  }
+}

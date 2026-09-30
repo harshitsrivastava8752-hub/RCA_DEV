@@ -1,0 +1,49 @@
+# ---------------------------------------------------------------------------
+# rca-agent access boundary (Kubernetes RBAC)
+#
+# The investigation agent runs as the ServiceAccount `rca-agent` in
+# `agent-system`. The Kubernetes API server enforces this file no matter what
+# the agent's code or LLM does, so a fully fooled model still cannot exceed it.
+#
+# What the agent CAN do: read (get/list/watch) pods, pod logs, events,
+# services, nodes, configmaps, deployments and replicasets.
+#
+# What the agent CANNOT do: create, update, patch or delete anything, exec
+# into pods, port-forward, or change RBAC. Kubernetes Secret objects are not
+# named in any rule, so no verb grants access to them. Absence is the control.
+#
+# Limits: the role is a ClusterRole because `nodes` is cluster-scoped, so
+# reads apply cluster-wide, not only to demo-app / observability /
+# agent-system. ConfigMaps can hold sensitive values, and this role can read
+# all of them.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rca-agent
+  namespace: agent-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rca-agent-readonly
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events", "services", "nodes", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rca-agent-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rca-agent-readonly
+subjects:
+  - kind: ServiceAccount
+    name: rca-agent
+    namespace: agent-system

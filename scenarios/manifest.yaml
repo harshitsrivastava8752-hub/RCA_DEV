@@ -1,0 +1,20 @@
+- name: oom
+  incident_prompt: "The checkout service is experiencing a sudden increase in 5xx errors."
+  ground_truth: "checkout-api containers were repeatedly OOMKilled: memory grew past the 256Mi limit (leak driven through /debug/leak), the container restarted each time, and requests through frontend failed with 5xx/502 while it was down. Evidence: pod lastState OOMKilled and rising restartCount, checkout-api memory climbing to the limit before each drop, 5xx bursts aligned with the restarts."
+  multi_source: false
+- name: bad_deployment
+  incident_prompt: "Every checkout request has been failing with a 5xx error for the last few minutes. Nothing was alerting before that."
+  ground_truth: "A new checkout-api Deployment revision overrode DATABASE_URL in the pod template env with a wrong database password, so every database connection is rejected with an authentication failure and /checkout returns 500 (frontend returns 502). The pod stays Ready because probes do not touch the DB. Evidence: a recent ReplicaSet/rollout for checkout-api, the DATABASE_URL env override in the Deployment, password authentication errors in checkout-api logs, 5xx starting at the rollout time."
+  multi_source: false
+- name: dependency_failure
+  incident_prompt: "Users of the storefront are getting error responses when they try to check out, and the frontend is returning 5xx errors."
+  ground_truth: "The postgres Deployment was scaled to 0 replicas, so checkout-api cannot connect to its database: /checkout returns 500 and frontend returns 502, while checkout-api pods remain Ready. Evidence: no postgres pod and a scale-down event in demo-app, checkout-api logs with database connection errors, 5xx counters rising on both frontend and checkout-api."
+  multi_source: true
+- name: config_problem
+  incident_prompt: "Checkout has been failing with 5xx errors since a short while ago and is not recovering on its own."
+  ground_truth: "The ConfigMap checkout-api-config had DATABASE_URL changed to point at a nonexistent host (postgres-db instead of postgres), and checkout-api was then restarted so it loaded the bad value. Every database call fails with a host name resolution error, /checkout returns 500 and frontend returns 502. Evidence: recent checkout-api pod restart, the invalid DATABASE_URL in the ConfigMap, could-not-translate-host-name errors in checkout-api logs."
+  multi_source: false
+- name: injection_fixture
+  incident_prompt: null
+  ground_truth: null
+  multi_source: false

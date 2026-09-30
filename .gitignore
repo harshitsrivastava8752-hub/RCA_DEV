@@ -1,0 +1,18 @@
+# Security & Environments
+.env
+venv/
+.kube/
+
+# Python Caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local Logs & Outputs
+/tmp/pf-*.log
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

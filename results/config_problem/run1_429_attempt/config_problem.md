@@ -1,0 +1,33 @@
+# Root Cause Analysis
+
+## Root Cause
+Unable to determine: the reasoning LLM became unavailable during the investigation.
+
+## Evidence
+- [{"name": "checkout-api-6c59f77c45-tr4f7", "phase": "Running", "restart_count": 0, "created": "2026-09-29T16:22:30Z", "containers": [{"name": "checkout-api", "ready": true, "restart_count": 0, "state": "running"}]}, {"name": "frontend-7f4d76bb4f-bn9xl", "phase": "Running", "restart_count": 3, "la...
+- [{"type": "Normal", "reason": "Killing", "message": "Stopping container checkout-api", "involved_object": "Pod/checkout-api-767bff96c9-mf6b5", "count": 1, "last_timestamp": "2026-09-29T16:22:40Z"}, {"type": "Normal", "reason": "SuccessfulDelete", "message": "Deleted pod: checkout-api-767bff96c9-m...
+- {"series_total": 2, "series": [{"metric": {"service": "frontend"}, "first": 1.96855, "last": 0.908848, "min": 0.754439, "max": 1.97208, "samples": [["2026-09-29T15:53:26Z", 1.96855], ["2026-09-29T15:59:26Z", 1.96841], ["2026-09-29T16:05:26Z", 1.95104], ["2026-09-29T16:11:26Z", 1.14044], ["2026-09...
+
+## Timeline
+- `2026-09-29T16:23:26Z` — k8s_get_pods: [{"name": "checkout-api-6c59f77c45-tr4f7", "phase": "Running", "restart_count": 0, "created": "2026-09-29T16:22:30Z", "containers": [{"name": "checkout-api", "ready": true, "restart_count": 0, "state": "running"}]}, {"name": "frontend-7f4d76bb4f-bn9xl", "phase": "Running", "restart_count": 3, "la...
+- `2026-09-29T16:23:26Z` — k8s_get_events: [{"type": "Normal", "reason": "Killing", "message": "Stopping container checkout-api", "involved_object": "Pod/checkout-api-767bff96c9-mf6b5", "count": 1, "last_timestamp": "2026-09-29T16:22:40Z"}, {"type": "Normal", "reason": "SuccessfulDelete", "message": "Deleted pod: checkout-api-767bff96c9-m...
+- `2026-09-29T16:23:26Z` — prometheus_query: {"series_total": 2, "series": [{"metric": {"service": "frontend"}, "first": 1.96855, "last": 0.908848, "min": 0.754439, "max": 1.97208, "samples": [["2026-09-29T15:53:26Z", 1.96855], ["2026-09-29T15:59:26Z", 1.96841], ["2026-09-29T16:05:26Z", 1.95104], ["2026-09-29T16:11:26Z", 1.14044], ["2026-09...
+
+## Confidence
+low
+
+## Alternative Explanations
+- The checkout-api pods are crashing due to exceeding memory limits, causing frequent restarts and resulting in 5xx errors.
+- A dependent service (e.g., database or inventory service) is unavailable or slow, causing checkout-api to return 5xx errors.
+- The ingress or load balancer is misconfigured, routing traffic to unhealthy or non-existent checkout-api pods, leading to 5xx responses.
+- A recent deployment of a new checkout-api image introduced a bug that causes runtime failures and 5xx errors.
+
+## Uncertainty
+Investigation halted early because the LLM backend failed (LLM request failed (HTTP 429); retrying in 234s would exceed the 90s call deadline). The evidence and hypotheses above reflect only what had been gathered before the failure; no hypothesis was confirmed or refuted.
+
+
+---
+
+## Ground truth (not shown to the agent)
+
+The ConfigMap checkout-api-config had DATABASE_URL changed to point at a nonexistent host (postgres-db instead of postgres), and checkout-api was then restarted so it loaded the bad value. Every database call fails with a host name resolution error, /checkout returns 500 and frontend returns 502. Evidence: recent checkout-api pod restart, the invalid DATABASE_URL in the ConfigMap, could-not-translate-host-name errors in checkout-api logs.

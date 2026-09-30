@@ -1,0 +1,30 @@
+# Root Cause Analysis
+
+## Root Cause
+Unable to determine: the reasoning LLM became unavailable during the investigation.
+
+## Evidence
+- [{"name": "checkout-api-6c59f77c45-tr4f7", "phase": "Running", "restart_count": 0, "created": "2026-09-29T16:22:30Z", "containers": [{"name": "checkout-api", "ready": true, "restart_count": 0, "state": "running"}]}, {"name": "frontend-7f4d76bb4f-bn9xl", "phase": "Running", "restart_count": 3, "la...
+- [{"type": "Warning", "reason": "Unhealthy", "message": "Readiness probe failed: command timed out: \"pg_isready -h 127.0.0.1 -U app -d orders\" timed out after 1s", "involved_object": "Pod/postgres-658dfb94c7-w7jp6", "count": 1, "last_timestamp": "2026-09-29T16:27:26Z"}, {"type": "Normal", "reaso...
+- {"series_total": 2, "series": [{"metric": {"service": "frontend"}, "first": 1.96153, "last": 1.96156, "min": 0.754439, "max": 1.97208, "samples": [["2026-09-29T15:58:03Z", 1.96153], ["2026-09-29T16:04:03Z", 1.96506], ["2026-09-29T16:10:03Z", 1.43871], ["2026-09-29T16:16:03Z", 1.00008], ["2026-09-...
+
+## Timeline
+- `2026-09-29T16:28:03Z` — k8s_get_pods: [{"name": "checkout-api-6c59f77c45-tr4f7", "phase": "Running", "restart_count": 0, "created": "2026-09-29T16:22:30Z", "containers": [{"name": "checkout-api", "ready": true, "restart_count": 0, "state": "running"}]}, {"name": "frontend-7f4d76bb4f-bn9xl", "phase": "Running", "restart_count": 3, "la...
+- `2026-09-29T16:28:03Z` — k8s_get_events: [{"type": "Warning", "reason": "Unhealthy", "message": "Readiness probe failed: command timed out: \"pg_isready -h 127.0.0.1 -U app -d orders\" timed out after 1s", "involved_object": "Pod/postgres-658dfb94c7-w7jp6", "count": 1, "last_timestamp": "2026-09-29T16:27:26Z"}, {"type": "Normal", "reaso...
+- `2026-09-29T16:28:03Z` — prometheus_query: {"series_total": 2, "series": [{"metric": {"service": "frontend"}, "first": 1.96153, "last": 1.96156, "min": 0.754439, "max": 1.97208, "samples": [["2026-09-29T15:58:03Z", 1.96153], ["2026-09-29T16:04:03Z", 1.96506], ["2026-09-29T16:10:03Z", 1.43871], ["2026-09-29T16:16:03Z", 1.00008], ["2026-09-...
+
+## Confidence
+low
+
+## Alternative Explanations
+- (none identified)
+
+## Uncertainty
+Investigation halted early because the LLM backend failed (LLM request failed (APITimeoutError); retrying in 3s would exceed the 90s call deadline). The evidence and hypotheses above reflect only what had been gathered before the failure; no hypothesis was confirmed or refuted.
+
+
+---
+
+## Ground truth (not shown to the agent)
+
+The ConfigMap checkout-api-config had DATABASE_URL changed to point at a nonexistent host (postgres-db instead of postgres), and checkout-api was then restarted so it loaded the bad value. Every database call fails with a host name resolution error, /checkout returns 500 and frontend returns 502. Evidence: recent checkout-api pod restart, the invalid DATABASE_URL in the ConfigMap, could-not-translate-host-name errors in checkout-api logs.

@@ -1,0 +1,76 @@
+# ---------------------------------------------------------------------------
+# rca-agent network boundary (NetworkPolicy)
+#
+# Applies only to pods labelled app=rca-agent in `agent-system`.
+#
+# Ingress: denied entirely. Nothing may connect to the agent.
+# Egress: default-deny, then only these destinations are allowed:
+#   1. DNS (53 UDP/TCP) to CoreDNS/kube-dns in kube-system
+#   2. Kubernetes API server (6443 on the kind control-plane node)
+#   3. `observability` namespace on 9090 (Prometheus), 3100 (Loki) and
+#      16686 (Jaeger)
+#   4. TCP 443 outbound, for the hosted LLM API
+#
+# KNOWN LIMITATION: vanilla NetworkPolicy cannot filter by domain, so rule 4
+# allows port 443 to ANY destination, including in-cluster 443 endpoints. It
+# does not restrict the agent to the LLM provider. If the LLM is a local
+# Ollama endpoint instead, add an explicit egress rule for its address/port.
+#
+# ASSUMPTION (rule 2): kind's control-plane node sits on the Docker bridge
+# network, so 172.16.0.0/12 covers Docker's default pools. Tighten to the
+# node's /32 (`docker inspect rca-agent-control-plane`) for a stricter demo.
+# Ports in rule 3 are pod-level ports, since policy is evaluated after
+# Service DNAT. Confirm the Jaeger v2 pod port against M1's unverified
+# `jaeger-query` Service.
+#
+# ENFORCEMENT CAVEAT: the default kind CNI (kindnet) enforces NetworkPolicy
+# only on recent kind releases (reported v0.30.0+). Older versions accept
+# this object and silently ignore it. Verify enforcement (e.g. a blocked
+# curl from the agent pod to an off-list destination) before claiming this
+# boundary holds.
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rca-agent-sandbox
+  namespace: agent-system
+spec:
+  podSelector:
+    matchLabels:
+      app: rca-agent
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 172.16.0.0/12
+      ports:
+        - protocol: TCP
+          port: 6443
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 3100
+        - protocol: TCP
+          port: 16686
+    - ports:
+        - protocol: TCP
+          port: 443

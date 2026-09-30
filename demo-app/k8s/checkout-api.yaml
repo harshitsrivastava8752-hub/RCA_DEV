@@ -1,0 +1,92 @@
+# build+load: docker build -t rca-demo/checkout-api:v1 demo-app/checkout-api && kind load docker-image rca-demo/checkout-api:v1 --name rca-agent
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: checkout-api-config
+  namespace: demo-app
+data:
+  DATABASE_URL: postgresql://app:app_password@postgres:5432/orders
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-api
+  namespace: demo-app
+  labels:
+    app: checkout-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: checkout-api
+  template:
+    metadata:
+      labels:
+        app: checkout-api
+    spec:
+      containers:
+        - name: checkout-api
+          image: rca-demo/checkout-api:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: checkout-api-config
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://jaeger-query.observability.svc:4318
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout-api
+  namespace: demo-app
+  labels:
+    app: checkout-api
+spec:
+  selector:
+    app: checkout-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: checkout-api
+  namespace: demo-app
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: checkout-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      # keep the app's own `service` label instead of Prometheus renaming it to exported_service
+      honorLabels: true
